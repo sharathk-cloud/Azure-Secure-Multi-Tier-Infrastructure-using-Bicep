@@ -1,0 +1,221 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {  
+ "lbName": { "value": "ilb-prod-cus-01" },
+   "bastion": {
+      "value": {
+        "pipName": "pip-bas-prod-cus-01",
+        "name": "bas-prod-cus-01"
+      }
+    },
+    "winWebAdminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/<your-subscription-id>/resourceGroups/rg-infra-prod-cus-01/providers/Microsoft.KeyVault/vaults/<your-keyvault-name>"
+        },
+        "secretName": "win-app-admin-password"
+      }
+    },
+"linuxWebAdminPassword": {
+  "reference": {
+    "keyVault": {
+      "id": "/subscriptions/<your-subscription-id>/resourceGroups/rg-infra-prod-cus-01/providers/Microsoft.KeyVault/vaults/<your-keyvault-name>"
+    },
+    "secretName": "linux-app-admin-password"
+  }
+},
+ "winWebConfig":{
+      "value": {
+        "scriptUri": "https://<your-storage-account-name>.blob.core.windows.net/scripts/setup-iis.ps1?<regenerate-sas-token>",
+        "vmSize":"Standard_D2s_v3",
+        "adminUserName":"azureadmin",
+        "baseName":"prod-app",
+        "count":2
+      }
+    },
+  "linuxWebConfig": {
+  "value": {
+    "baseName": "staging-app",
+    "vmSize": "Standard_D2s_v3",
+    "count": 1,
+    "adminUsername": "linuxadmin"    
+  }},
+   "location": { "value": "centralus" },
+    "storageAccountName": { "value": "<your-storage-account-name>" },
+  "vnet": {
+      "value": {
+        "name": "vnet-prod-cus-01",
+        "addressPrefixes": ["10.0.0.0/16"],
+        "subnets": [
+          { "name": "snet-prod-cus-app-01", "prefix": "10.0.0.0/24" },
+          { "name": "snet-prod-cus-db-01",  "prefix": "10.0.1.0/24" },
+          { "name": "AzureBastionSubnet",    "prefix": "10.0.2.0/24" }
+        ]
+      }
+    },
+    "testvnet": {
+      "value": {
+        "name": "vnet-staging-cus-01",
+        "addressPrefixes": ["10.1.0.0/16"],
+        "subnets": [
+          { "name": "snet-staging-cus-app-01", "prefix": "10.1.0.0/24" }
+        ]
+      }
+    },
+    "nsg": {
+      "value": {
+        "name": "nsg-prod-cus-shared-01",
+        "rules": [
+          {
+            "name": "in-allow-rdp-from-bastion-subnet",
+            "properties": {
+              "description": "Allow RDP only from the Bastion subnet — public RDP is unnecessary when Bastion is in use.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "10.0.2.0/24",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 400,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "in-allow-http-from-internet-to-10-0-0-4",
+            "properties": {
+              "description": "Allow HTTP from the Internet service tag to 10.0.0.4.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "Internet",
+              "destinationAddressPrefix": "10.0.0.4",
+              "access": "Allow",
+              "priority": 410,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    "bastionNsg": {
+      "value": {
+        "name": "nsg-bas-prod-cus-01",
+        "rules": [
+          {
+            "name": "AllowHttpsInBound",
+            "properties": {
+              "description": "Required: allow HTTPS management traffic from Internet.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "Internet",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowGatewayManagerInBound",
+            "properties": {
+              "description": "Required: allow Azure Gateway Manager control plane traffic.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "GatewayManager",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowLoadBalancerInBound",
+            "properties": {
+              "description": "Required: allow Azure Load Balancer health probes.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 140,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowBastionHostCommunicationInBound",
+            "properties": {
+              "description": "Required: allow inter-host communication within Bastion.",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRanges": ["8080", "5701"],
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 150,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowSshRdpOutBound",
+            "properties": {
+              "description": "Required: allow Bastion to reach target VMs via SSH/RDP.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRanges": ["22", "3389"],
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "AllowAzureCloudOutBound",
+            "properties": {
+              "description": "Required: allow Bastion to reach Azure platform services.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "AzureCloud",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "AllowBastionHostCommunicationOutBound",
+            "properties": {
+              "description": "Required: allow inter-host communication within Bastion.",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRanges": ["8080", "5701"],
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "AllowGetSessionInformationOutBound",
+            "properties": {
+              "description": "Required: allow session certificate validation over HTTP.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Internet",
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Outbound"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
