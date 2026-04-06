@@ -1,22 +1,17 @@
-# ============================================================
-# GitHub Actions — Bicep CI
-# Jobs: Lint → Validate → What-If
-# ============================================================
+
 
 name: Bicep CI - Lint, Validate and What-If
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
+ 
 
-  # ── Job 1: Lint ─────────────────────────────────────────
   lint:
     name: Lint Bicep Code
     runs-on: ubuntu-latest
@@ -25,12 +20,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Bicep CLI
+      - name: Cache Bicep CLI
+        uses: actions/cache@v4
+        with:
+          path: ~/.azure/bicep
+          key: ${{ runner.os }}-bicep-${{ hashFiles('**/*.bicep') }}
+          restore-keys: |
+            ${{ runner.os }}-bicep-
+
+      - name: Install Azure CLI + Bicep
         run: |
-          curl -Lo bicep-cli https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
-          chmod +x ./bicep-cli
-          sudo mv ./bicep-cli /usr/local/bin/bicep
-          bicep --version
+          az version || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az bicep install
+          az bicep version
 
       - name: Lint — build all Bicep files
         run: |
@@ -41,7 +43,6 @@ jobs:
           done
           echo "All files passed lint."
 
-  # ── Job 2: Validate ─────────────────────────────────────
   validate:
     name: Validate Against Azure
     runs-on: ubuntu-latest
@@ -51,22 +52,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Cache Bicep CLI
+        uses: actions/cache@v4
+        with:
+          path: ~/.azure/bicep
+          key: ${{ runner.os }}-bicep-${{ hashFiles('**/*.bicep') }}
+          restore-keys: |
+            ${{ runner.os }}-bicep-
+
+      - name: Install Azure CLI + Bicep
+        run: |
+          az version || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az bicep install
+
       - name: Login to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Validate final deployment
-        uses: azure/arm-deploy@v1
-        with:
-          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          resourceGroupName: ${{ secrets.AZURE_RG }}
-          template: bicep/main.bicep
-          parameters: bicep/params/dev.parameters.json
-          deploymentMode: Validate
-          failOnStdErr: false
+      - name: Validate deployment
+        run: |
+          az deployment group validate \
+            --resource-group ${{ secrets.AZURE_RG }} \
+            --template-file bicep/main.bicep \
+            --parameters bicep/params/dev.parameters.json
 
-  # ── Job 3: What-If ──────────────────────────────────────
   what-if:
     name: What-If Preview
     runs-on: ubuntu-latest
@@ -76,17 +86,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Cache Bicep CLI
+        uses: actions/cache@v4
+        with:
+          path: ~/.azure/bicep
+          key: ${{ runner.os }}-bicep-${{ hashFiles('**/*.bicep') }}
+          restore-keys: |
+            ${{ runner.os }}-bicep-
+
+      - name: Install Azure CLI + Bicep
+        run: |
+          az version || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az bicep install
+
       - name: Login to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Run What-If
-        uses: azure/cli@v1
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az deployment group what-if \
-              --resource-group ${{ secrets.AZURE_RG }} \
-              --template-file bicep/main.bicep \
-              --parameters bicep/params/dev.parameters.json
+        run: |
+          az deployment group what-if \
+            --resource-group ${{ secrets.AZURE_RG }} \
+            --template-file bicep/main.bicep \
+            --parameters bicep/params/dev.parameters.json
+
+
