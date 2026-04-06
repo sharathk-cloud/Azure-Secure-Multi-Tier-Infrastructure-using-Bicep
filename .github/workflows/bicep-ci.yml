@@ -1,0 +1,96 @@
+# ============================================================
+# GitHub Actions — Bicep CI
+# Runs on every push and pull request to main
+# Jobs: Lint → Validate → What-If
+# ============================================================
+
+name: Bicep CI - Lint, Validate and What-If
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+
+  # ── Job 1: Lint ─────────────────────────────────────────
+  # Checks Bicep syntax — no Azure connection needed
+  lint:
+    name: Lint Bicep Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Bicep CLI
+        run: |
+          curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x ./bicep
+          sudo mv ./bicep /usr/local/bin/bicep
+          bicep --version
+
+      - name: Lint — build all Bicep files
+        run: |
+          echo "Linting all Bicep files..."
+          find . -name "*.bicep" | while read file; do
+            echo "  Checking: $file"
+            bicep build "$file" --outfile /dev/null
+          done
+          echo "All files passed lint."
+
+  # ── Job 2: Validate ─────────────────────────────────────
+  # Asks Azure — would this deployment work? (no resources created)
+  validate:
+    name: Validate Against Azure
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Validate final deployment (Lab 13)
+        uses: azure/arm-deploy@v1
+        with:
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resourceGroupName: ${{ secrets.AZURE_RG }}
+          template: bicep/main.bicep
+          parameters: bicep/params/dev.parameters.json
+          deploymentMode: Validate
+          failOnStdErr: false
+
+  # ── Job 3: What-If ──────────────────────────────────────
+  # Shows what would change in Azure — without deploying
+  what-if:
+    name: What-If Preview
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Run What-If
+        uses: azure/cli@v1
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az deployment group what-if \
+              --resource-group ${{ secrets.AZURE_RG }} \
+              --template-file bicep/main.bicep \
+              --parameters bicep/params/dev.parameters.json
