@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "winWebAdminPassword":{
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/<your-subscription-id>/resourceGroups/rg-infra-prod-cus-01/providers/Microsoft.KeyVault/vaults/<your-keyvault-name>"
+        },
+        "secretName": "win-app-admin-password"
+      }
+    },
+    "winWebConfig":{
+      "value": {
+        "vmSize":"Standard_D2s_v3",
+        "adminUserName":"azureadmin",
+        "baseName":"prod-app",
+        "count":2
+      }
+    },
+   "location":{"value": "centralus"},
+    "storageAccountName" :{"value": "<your-storage-account-name>"},
+    "vnet":{
+        "value": {
+            "name":"vnet-prod-cus-01",
+            "addressPrefixes":["10.0.0.0/16"],
+            "subnets":[
+                {"name":"snet-prod-cus-app-01","prefix": "10.0.0.0/24"},
+                {"name":"snet-prod-cus-db-01","prefix": "10.0.1.0/24"}
+            ]
+        }
+    },
+    "nsg":{
+      "value": { 
+        "name": "nsg-prod-cus-shared-01",
+        "rules": [
+          {
+        "name": "in-allow-rdp-admin",
+        "properties": {
+          "description": "Allow RDP for admin access.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "3389",
+          "sourceAddressPrefix": "*",
+          "destinationAddressPrefix": "*",
+          "access": "Allow",
+          "priority": 400,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "in-allow-http-from-internet-to-10-0-0-4",
+        "properties": {
+          "description": "Allow HTTP from the Internet service tag to 10.0.0.4.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "80",
+          "sourceAddressPrefix": "Internet",
+          "destinationAddressPrefix": "10.0.0.4",
+          "access": "Allow",
+          "priority": 410,
+          "direction": "Inbound"
+        }
+      }
+        ]
+      }
+    }
+  }
+}
