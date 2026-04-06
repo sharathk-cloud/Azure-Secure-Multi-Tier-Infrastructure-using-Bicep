@@ -1,0 +1,32 @@
+# ── Sensitive files ───────────────────────────────────────────
+# Never commit real secrets, credentials, or local overrides
+*.env
+*.secrets.*
+local.parameters.json
+*.parameters.local.json
+
+# ── OS generated files ────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ── VS Code ───────────────────────────────────────────────────
+.vscode/
+*.code-workspace
+
+# ── PowerShell ────────────────────────────────────────────────
+*.ps1.bak
+
+# ── Bicep build artifacts ─────────────────────────────────────
+# These are compiled ARM JSON outputs — not source files
+*.json.bak
+
+# ── Azure CLI / PowerShell session files ──────────────────────
+.azure/
+azureProfile.json
+
