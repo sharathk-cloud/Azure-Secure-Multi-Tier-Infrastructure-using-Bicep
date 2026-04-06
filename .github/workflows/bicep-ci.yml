@@ -27,8 +27,9 @@ jobs:
 
       - name: Install Bicep CLI
         run: |
-          curl -Lo /usr/local/bin/bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
-          chmod +x /usr/local/bin/bicep
+          curl -Lo bicep-cli https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x ./bicep-cli
+          sudo mv ./bicep-cli /usr/local/bin/bicep
           bicep --version
 
       - name: Lint — build all Bicep files
