@@ -19,29 +19,27 @@ jobs:
 
   # ── Job 1: Lint ─────────────────────────────────────────
   # Checks Bicep syntax — no Azure connection needed
-  lint:
-    name: Lint Bicep Code
-    runs-on: ubuntu-latest
+  
+lint:
+  name: Lint Bicep Code
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Install Bicep CLI
+      run: |
+        curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+        chmod +x ./bicep
+        sudo mv ./bicep /usr/local/bin/bicep
+        bicep --version
 
-      - name: Install Bicep CLI
-        run: |
-          curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
-          chmod +x ./bicep
-          sudo mv ./bicep /usr/local/bin/bicep
-          bicep --version
+    - name: Lint — build all Bicep files
+      run: |
+        find . -name "*.bicep" | while read file; do
+          echo "Linting $file"
+          bicep build "$file" --outfile /dev/null
+        done
 
-      - name: Lint — build all Bicep files
-        run: |
-          echo "Linting all Bicep files..."
-          find . -name "*.bicep" | while read file; do
-            echo "  Checking: $file"
-            bicep build "$file" --outfile /dev/null
-          done
-          echo "All files passed lint."
 
   # ── Job 2: Validate ─────────────────────────────────────
   # Asks Azure — would this deployment work? (no resources created)
