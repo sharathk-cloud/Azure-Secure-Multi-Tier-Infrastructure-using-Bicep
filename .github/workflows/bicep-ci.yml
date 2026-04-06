@@ -1,6 +1,5 @@
 # ============================================================
 # GitHub Actions — Bicep CI
-# Runs on every push and pull request to main
 # Jobs: Lint → Validate → What-If
 # ============================================================
 
@@ -18,31 +17,31 @@ on:
 jobs:
 
   # ── Job 1: Lint ─────────────────────────────────────────
-  # Checks Bicep syntax — no Azure connection needed
-  
-lint:
-  name: Lint Bicep Code
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
+  lint:
+    name: Lint Bicep Code
+    runs-on: ubuntu-latest
 
-    - name: Install Bicep CLI
-      run: |
-        curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
-        chmod +x ./bicep
-        sudo mv ./bicep /usr/local/bin/bicep
-        bicep --version
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Lint — build all Bicep files
-      run: |
-        find . -name "*.bicep" | while read file; do
-          echo "Linting $file"
-          bicep build "$file" --outfile /dev/null
-        done
+      - name: Install Bicep CLI
+        run: |
+          curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x ./bicep
+          sudo mv ./bicep /usr/local/bin/bicep
+          bicep --version
 
+      - name: Lint — build all Bicep files
+        run: |
+          echo "Linting all Bicep files..."
+          find . -name "*.bicep" | while read file; do
+            echo "Checking: $file"
+            bicep build "$file" --outfile /dev/null
+          done
+          echo "All files passed lint."
 
   # ── Job 2: Validate ─────────────────────────────────────
-  # Asks Azure — would this deployment work? (no resources created)
   validate:
     name: Validate Against Azure
     runs-on: ubuntu-latest
@@ -57,7 +56,7 @@ lint:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Validate final deployment (Lab 13)
+      - name: Validate final deployment
         uses: azure/arm-deploy@v1
         with:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -68,7 +67,6 @@ lint:
           failOnStdErr: false
 
   # ── Job 3: What-If ──────────────────────────────────────
-  # Shows what would change in Azure — without deploying
   what-if:
     name: What-If Preview
     runs-on: ubuntu-latest
