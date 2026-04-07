@@ -1,61 +1,60 @@
 name: Bicep CI
 
 on:
-push:
-branches: [ main ]
-pull_request:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
-bicep-validation:
-runs-on: ubuntu-latest
+  bicep-validation:
+    runs-on: ubuntu-latest
 
-steps:
-- name: Checkout code
-  uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-# Install Azure CLI
-- name: Install Azure CLI
-  uses: azure/cli@v2
+      - name: Install Azure CLI
+        uses: azure/cli@v2
 
-# Install Bicep CLI
-- name: Install Bicep
-  run: az bicep install
+      - name: Install Bicep
+        run: az bicep install
 
-# -------------------------
-# LINT (only /bicep folder)
-# -------------------------
-- name: Lint Bicep files
-  run: |
-    echo "Linting production Bicep files..."
-    find ./bicep -type f -name "*.bicep" -exec az bicep lint --file {} \;
+      # -------------------------
+      # LINT (only /bicep folder)
+      # -------------------------
+      - name: Lint Bicep files
+        run: |
+          echo "Linting production Bicep files..."
+          find ./bicep -type f -name "*.bicep" -exec az bicep lint --file {} \;
 
-# -------------------------
-# AZURE LOGIN
-# -------------------------
-- name: Azure Login
-  uses: azure/login@v2
-  with:
-    creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # -------------------------
+      # AZURE LOGIN
+      # -------------------------
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-- name: Set Azure Subscription
-  run: az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Set Azure Subscription
+        run: az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-# -------------------------
-# VALIDATE (main.bicep only)
-# -------------------------
-- name: Validate Bicep deployment
-  run: |
-    az deployment group validate \
-      --resource-group ${{ secrets.AZURE_RG }} \
-      --template-file bicep/main.bicep \
-      --parameters bicep/parameters/dev.parameters.json
+      # -------------------------
+      # VALIDATE
+      # -------------------------
+      - name: Validate Bicep deployment
+        run: |
+          az deployment group validate \
+            --resource-group ${{ secrets.AZURE_RG }} \
+            --template-file bicep/main.bicep \
+            --parameters bicep/parameters/dev.parameters.json
 
-# -------------------------
-# WHAT-IF (preview changes)
-# -------------------------
-- name: What-If deployment
-  run: |
-    az deployment group what-if \
-      --resource-group ${{ secrets.AZURE_RG }} \
-      --template-file bicep/main.bicep \
-      --parameters bicep/parameters/dev.parameters.json
+      # -------------------------
+      # WHAT-IF
+      # -------------------------
+      - name: What-If deployment
+        run: |
+          az deployment group what-if \
+            --resource-group ${{ secrets.AZURE_RG }} \
+            --template-file bicep/main.bicep \
+            --parameters bicep/parameters/dev.parameters.json
