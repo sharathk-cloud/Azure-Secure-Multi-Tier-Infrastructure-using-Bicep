@@ -1,0 +1,84 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "lbName": { "value": "ilb-dev-cus-01" },
+    "bastion": {
+      "value": {
+        "pipName": "pip-bas-dev-cus-01",
+        "name": "bas-dev-cus-01"
+      }
+    },
+    "winWebAdminPassword": { "value": "DummyPassword123!" },
+    "linuxWebAdminPassword": { "value": "DummyPassword123!" },
+    "sqlAdminPassword": { "value": "DummyPassword123!" },
+    "sqlAdminLogin": { "value": "sqladmin" },
+    "winWebConfig": {
+      "value": {
+        "scriptUri": "https://dummy.blob.core.windows.net/scripts/setup-iis.ps1?dummySASToken",
+        "vmSize": "Standard_D2s_v3",
+        "adminUserName": "azureadmin",
+        "baseName": "dev-app",
+        "count": 1
+      }
+    },
+    "linuxWebConfig": {
+      "value": {
+        "baseName": "dev-app",
+        "vmSize": "Standard_D2s_v3",
+        "count": 1,
+        "adminUsername": "linuxadmin"
+      }
+    },
+    "location": { "value": "centralus" },
+    "storageAccountName": { "value": "devstorageacct123" },
+    "vnet": {
+      "value": {
+        "name": "vnet-dev-cus-01",
+        "addressPrefixes": ["10.10.0.0/16"],
+        "subnets": [
+          { "name": "snet-dev-app-01", "prefix": "10.10.0.0/24" },
+          { "name": "snet-dev-db-01", "prefix": "10.10.1.0/24" },
+          { "name": "AzureBastionSubnet", "prefix": "10.10.2.0/24" }
+        ]
+      }
+    },
+    "testvnet": {
+      "value": {
+        "name": "vnet-dev-staging-01",
+        "addressPrefixes": ["10.11.0.0/16"],
+        "subnets": [
+          { "name": "snet-dev-staging-01", "prefix": "10.11.0.0/24" }
+        ]
+      }
+    },
+    "nsg": {
+      "value": {
+        "name": "nsg-dev-cus-shared-01",
+        "rules": [
+          {
+            "name": "allow-rdp-from-bastion",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "10.10.2.0/24",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 400,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    "tags": {
+      "value": {
+        "Environment": "dev",
+        "Project": "azure-secure-multi-tier-infra",
+        "Owner": "Sharath Kumar",
+        "ManagedBy": "Bicep"
+      }
+    }
+  }
+}
