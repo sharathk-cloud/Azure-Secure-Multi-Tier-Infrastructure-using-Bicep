@@ -1,114 +1,63 @@
-
-
-name: Bicep CI - Lint, Validate and What-If
+name: Bicep CI
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+push:
+branches: [ main ]
+pull_request:
 
 jobs:
- 
+bicep-validation:
+runs-on: ubuntu-latest
 
-  lint:
-    name: Lint Bicep Code
-    runs-on: ubuntu-latest
+```
+steps:
+- name: Checkout code
+  uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+# Install Azure CLI
+- name: Install Azure CLI
+  uses: azure/cli@v2
 
-      - name: Cache Bicep CLI
-        uses: actions/cache@v4
-        with:
-          path: ~/.azure/bicep
-          key: ${{ runner.os }}-bicep-${{ hashFiles('**/*.bicep') }}
-          restore-keys: |
-            ${{ runner.os }}-bicep-
+# Install Bicep CLI
+- name: Install Bicep
+  run: az bicep install
 
-      - name: Install Azure CLI + Bicep
-        run: |
-          az version || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-          az bicep install
-          az bicep version
+# -------------------------
+# LINT (only /bicep folder)
+# -------------------------
+- name: Lint Bicep files
+  run: |
+    echo "Linting production Bicep files..."
+    find ./bicep -type f -name "*.bicep" -exec az bicep lint --file {} \;
 
-      - name: Lint — build all Bicep files
-        run: |
-          echo "Linting all Bicep files..."
-          find . -name "*.bicep" | while read file; do
-            echo "Checking: $file"
-            bicep build "$file" --outfile /dev/null
-          done
-          echo "All files passed lint."
+# -------------------------
+# AZURE LOGIN
+# -------------------------
+- name: Azure Login
+  uses: azure/login@v2
+  with:
+    creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-  validate:
-    name: Validate Against Azure
-    runs-on: ubuntu-latest
-    needs: lint
+- name: Set Azure Subscription
+  run: az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+# -------------------------
+# VALIDATE (main.bicep only)
+# -------------------------
+- name: Validate Bicep deployment
+  run: |
+    az deployment group validate \
+      --resource-group ${{ secrets.AZURE_RG }} \
+      --template-file bicep/main.bicep \
+      --parameters bicep/parameters/dev.parameters.json
 
-      - name: Cache Bicep CLI
-        uses: actions/cache@v4
-        with:
-          path: ~/.azure/bicep
-          key: ${{ runner.os }}-bicep-${{ hashFiles('**/*.bicep') }}
-          restore-keys: |
-            ${{ runner.os }}-bicep-
-
-      - name: Install Azure CLI + Bicep
-        run: |
-          az version || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-          az bicep install
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Validate deployment
-        run: |
-          az deployment group validate \
-            --resource-group ${{ secrets.AZURE_RG }} \
-            --template-file bicep/main.bicep \
-            --parameters bicep/params/dev.parameters.json
-
-  what-if:
-    name: What-If Preview
-    runs-on: ubuntu-latest
-    needs: validate
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Cache Bicep CLI
-        uses: actions/cache@v4
-        with:
-          path: ~/.azure/bicep
-          key: ${{ runner.os }}-bicep-${{ hashFiles('**/*.bicep') }}
-          restore-keys: |
-            ${{ runner.os }}-bicep-
-
-      - name: Install Azure CLI + Bicep
-        run: |
-          az version || curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-          az bicep install
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Run What-If
-        run: |
-          az deployment group what-if \
-            --resource-group ${{ secrets.AZURE_RG }} \
-            --template-file bicep/main.bicep \
-            --parameters bicep/params/dev.parameters.json
-
-
+# -------------------------
+# WHAT-IF (preview changes)
+# -------------------------
+- name: What-If deployment
+  run: |
+    az deployment group what-if \
+      --resource-group ${{ secrets.AZURE_RG }} \
+      --template-file bicep/main.bicep \
+      --parameters bicep/parameters/dev.parameters.json
+```
