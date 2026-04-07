@@ -47,17 +47,18 @@ jobs:
       # -------------------------
       - name: Validate Bicep deployment
         run: |
-          az deployment group validate \
-            --resource-group ${{ secrets.AZURE_RG }} \
-            --template-file bicep/main.bicep \
-            --parameters bicep/parameters/dev.parameters.json
+         az deployment group validate \
+          --resource-group ${{ secrets.AZURE_RG }} \
+          --template-file bicep/main.bicep \
+          --parameters @bicep/parameters/dev.parameters.json
 
       # -------------------------
       # WHAT-IF
       # -------------------------
+
       - name: What-If deployment
         run: |
           az deployment group what-if \
-            --resource-group ${{ secrets.AZURE_RG }} \
-            --template-file bicep/main.bicep \
-            --parameters bicep/parameters/dev.parameters.json
+          --resource-group ${{ secrets.AZURE_RG }} \
+          --template-file bicep/main.bicep \
+          --parameters @bicep/parameters/dev.parameters.json
