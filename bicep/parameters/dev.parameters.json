@@ -31,7 +31,7 @@
       }
     },
     "location": { "value": "centralus" },
-    "storageAccountName": { "value": "devstorageacct123" },
+    "storageAccountName": { "value": "devstorageacct123181827" },
     "vnet": {
       "value": {
         "name": "vnet-dev-cus-01",
