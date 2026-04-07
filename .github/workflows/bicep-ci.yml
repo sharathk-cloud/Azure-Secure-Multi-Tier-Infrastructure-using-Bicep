@@ -14,9 +14,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Install Azure CLI (safe method)
       - name: Install Azure CLI
-        uses: azure/cli@v2
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
+      # Install Bicep
       - name: Install Bicep
         run: az bicep install
 
