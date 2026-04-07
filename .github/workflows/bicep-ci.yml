@@ -9,7 +9,6 @@ jobs:
 bicep-validation:
 runs-on: ubuntu-latest
 
-```
 steps:
 - name: Checkout code
   uses: actions/checkout@v4
@@ -60,4 +59,3 @@ steps:
       --resource-group ${{ secrets.AZURE_RG }} \
       --template-file bicep/main.bicep \
       --parameters bicep/parameters/dev.parameters.json
-```
