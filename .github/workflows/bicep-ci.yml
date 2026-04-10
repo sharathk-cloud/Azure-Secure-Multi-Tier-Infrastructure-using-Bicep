@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:  
 
 jobs:
   bicep-validation:
@@ -14,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Install Azure CLI (safe method)
+      # Install Azure CLI
       - name: Install Azure CLI
         run: |
           curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
@@ -24,7 +25,7 @@ jobs:
         run: az bicep install
 
       # -------------------------
-      # LINT (only /bicep folder)
+      # LINT
       # -------------------------
       - name: Lint Bicep files
         run: |
@@ -47,18 +48,28 @@ jobs:
       # -------------------------
       - name: Validate Bicep deployment
         run: |
-         az deployment group validate \
-          --resource-group ${{ secrets.AZURE_RG }} \
-          --template-file bicep/main.bicep \
-          --parameters @bicep/parameters/dev.parameters.json
+          az deployment group validate \
+            --resource-group ${{ secrets.AZURE_RG }} \
+            --template-file bicep/main.bicep \
+            --parameters @bicep/parameters/dev.parameters.json
 
       # -------------------------
       # WHAT-IF
       # -------------------------
-
       - name: What-If deployment
         run: |
           az deployment group what-if \
-          --resource-group ${{ secrets.AZURE_RG }} \
-          --template-file bicep/main.bicep \
-          --parameters @bicep/parameters/dev.parameters.json
+            --resource-group ${{ secrets.AZURE_RG }} \
+            --template-file bicep/main.bicep \
+            --parameters @bicep/parameters/dev.parameters.json
+
+      # -------------------------
+      # DEPLOY (Manual Only)
+      # -------------------------
+      - name: Deploy Infrastructure (Manual Trigger Only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          az deployment group create \
+            --resource-group ${{ secrets.AZURE_RG }} \
+            --template-file bicep/main.bicep \
+            --parameters @bicep/parameters/dev.parameters.json

@@ -10,7 +10,7 @@ Real issues encountered during this project and how they were resolved.
 
 **Cause:** The SAS token in `winWebConfig.scriptUri` inside `dev.parameters.json` had expired. The CSE agent on the VM tried to download `setup-iis.ps1` from blob storage but received HTTP 403 Forbidden. ARM considers the extension resource created successfully regardless of whether the script actually ran.
 
-**Resolution:** Regenerate the SAS token in the Azure portal — go to Storage Account → container → `setup-iis.ps1` → Generate SAS. Set an expiry date far enough in the future. Paste the new URL into `params/dev.parameters.json` before redeploying.
+**Resolution:** Regenerate the SAS token in the Azure portal — go to Storage Account → container → `setup-iis.ps1` → Generate SAS. Set an expiry date far enough in the future. Paste the new URL into `parameters/dev.parameters.json` before redeploying.
 
 **Key insight:** ARM deployment success does not guarantee execution success. Always validate the VM extension status separately after deployment.
 
@@ -22,7 +22,7 @@ Real issues encountered during this project and how they were resolved.
 
 **Cause:** Azure mandates the exact name `AzureBastionSubnet` — this capitalisation, this spelling, no variation. Names like `bastion-subnet` or `BastionSubnet` are rejected without a helpful error message.
 
-**Resolution:** Ensure the subnet name in `params/dev.parameters.json` is exactly `AzureBastionSubnet`.
+**Resolution:** Ensure the subnet name in `parameters/dev.parameters.json` is exactly `AzureBastionSubnet`.
 
 ---
 

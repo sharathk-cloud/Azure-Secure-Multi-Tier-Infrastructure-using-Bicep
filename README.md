@@ -172,7 +172,7 @@ Required secrets:
 
 ### 3. 🔗 Valid SAS Token
 
-The Custom Script Extension (Lab 07) downloads `setup-iis.ps1` from a Storage Account using a SAS token. Check the `se=` expiry date in `params/dev.parameters.json` before deploying — an expired token will cause the extension to fail silently while the deployment reports success.
+The Custom Script Extension (Lab 07) downloads `setup-iis.ps1` from a Storage Account using a SAS token. Check the `se=` expiry date in `parameters/dev.parameters.json` before deploying — an expired token will cause the extension to fail silently while the deployment reports success.
 
 ### 4. 🛠️ Required Tools
 
@@ -189,7 +189,7 @@ Each lab is self-contained. Navigate into the lab folder and run:
 New-AzResourceGroupDeployment `
   -ResourceGroup rg-infra-prod-cus-01 `
   -TemplateFile .\main.bicep `
-  -TemplateParameterFile .\params\dev.parameters.json
+  -TemplateParameterFile .\parameters\dev.parameters.json
 ```
 
 To deploy the complete final solution, use Lab 13.
@@ -198,7 +198,7 @@ To deploy the complete final solution, use Lab 13.
 
 ## 🖼️ Deployment Validation
 
-All components were deployed and verified in a live Azure environment. Screenshots are maintained inside each lab's `Screenshots/` folder and cover:
+All components were deployed and verified in a live Azure environment. Screenshots are maintained inside `docs/screenshots` folder and cover:
 
 - Resource deployment confirmation (portal + PowerShell output)
 - Bastion connectivity proof

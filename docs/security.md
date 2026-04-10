@@ -120,5 +120,5 @@ VNet peering child resources (`virtualNetworkPeerings`) do not support tags in A
 
 - Real subscription IDs — replaced with `<your-subscription-id>`
 - Real Key Vault resource paths — replace with your vault name before deploying
-- SAS tokens — regenerate before each deployment and paste into `params/dev.parameters.json`
+- SAS tokens — regenerate before each deployment and paste into `parameters/dev.parameters.json`
 - VM or SQL passwords of any kind
